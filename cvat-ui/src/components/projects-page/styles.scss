@@ -200,3 +200,60 @@
 .cvat-import-project-button-loading {
     margin-left: 10;
 }
+
+// FleetScout project folders
+.cvat-project-folders {
+    padding: $grid-unit-size 0;
+
+    .cvat-project-folders-list,
+    .cvat-project-folders-current {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $grid-unit-size;
+        width: 100%;
+    }
+
+    .cvat-project-folder,
+    .cvat-project-folder-back {
+        display: inline-flex;
+        align-items: center;
+        gap: $grid-unit-size;
+        padding: $grid-unit-size $grid-unit-size * 1.5;
+        border: 1px solid #d9d9d9;
+        border-radius: $grid-unit-size;
+        background: #fff;
+        cursor: pointer;
+        user-select: none;
+
+        &:hover {
+            border-color: #234e9c;
+        }
+    }
+
+    .cvat-project-folder-icon {
+        color: #234e9c;
+        font-size: 16px;
+    }
+
+    .cvat-project-folder-count {
+        padding: 0 $grid-unit-size;
+        border-radius: $grid-unit-size * 2;
+        background: #f0f0f0;
+        font-size: 12px;
+    }
+
+    .cvat-project-folder-drop-over {
+        border: 2px dashed #234e9c;
+        background: #e6edf8;
+    }
+
+    .cvat-project-folders-current-name {
+        font-size: 16px;
+        margin: 0 $grid-unit-size;
+    }
+}
+
+.cvat-projects-project-item-card[draggable='true'] {
+    cursor: grab;
+}

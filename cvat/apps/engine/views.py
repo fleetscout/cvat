@@ -401,10 +401,15 @@ class ProjectViewSet(
 
     search_fields = ("name", "owner", "assignee")
     simple_filters = (*search_fields, "status")
-    filter_fields = (*simple_filters, "id", "updated_date")
-    ordering_fields = list(filter_fields)
+    filter_fields = (*simple_filters, "id", "updated_date", "folder")
+    ordering_fields = [f for f in filter_fields if f != "folder"]
     ordering = "-id"
-    lookup_fields = {"owner": "owner__username", "assignee": "assignee__username"}
+    lookup_fields = {
+        "owner": "owner__username",
+        "assignee": "assignee__username",
+        # FleetScout projects page folders (cvat.apps.fs_workflow); {"!": {"var": "folder"}} = in no folder
+        "folder": "folder__folder_id",
+    }
     iam_supports_organization_params = True
     iam_permission_class = ProjectPermission
 

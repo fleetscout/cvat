@@ -19,6 +19,7 @@ import { Project } from 'cvat-core-wrapper';
 import { useCardHeightHOC, usePlugins, useContextMenuClick } from 'utils/hooks';
 import Preview from 'components/common/preview';
 import ProjectActionsComponent from './actions-menu';
+import { useProjectDrag } from './project-folders';
 
 interface Props {
     projectInstance: Project;
@@ -28,7 +29,7 @@ interface Props {
 
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-projects-page',
-    siblingClassNames: ['cvat-projects-pagination', 'cvat-projects-page-top-bar'],
+    siblingClassNames: ['cvat-projects-pagination', 'cvat-projects-page-top-bar', 'cvat-project-folders'],
     paddings: 72,
     minHeight: 200,
     numberOfRows: 3,
@@ -42,6 +43,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     } = props;
 
     const history = useHistory();
+    const dragProps = useProjectDrag(instance.id);
     const ribbonPlugins = usePlugins((state: CombinedState) => state.plugins.components.projectItem.ribbon, props);
     const height = useCardHeight();
     const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
@@ -84,6 +86,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
             hoverable
             onClick={onClick}
             onContextMenuCapture={handleContextMenuCapture}
+            {...dragProps}
         >
             <Meta
                 title={(

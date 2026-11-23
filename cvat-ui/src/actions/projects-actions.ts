@@ -94,6 +94,22 @@ export function getProjectTasksAsync(tasksQuery: Partial<TasksQuery> = {}): Thun
     };
 }
 
+// FleetScout project folders: which folder the projects page shows.
+// undefined = no folder filtering (other pages), null = projects in no folder, a number = that folder.
+let projectFolderScope: number | null | undefined;
+
+export function setProjectFolderScope(scope: number | null | undefined): void {
+    projectFolderScope = scope;
+}
+
+function withFolderScope(filter: string | null | undefined): string | null | undefined {
+    if (projectFolderScope === undefined) return filter;
+    const condition = projectFolderScope === null ?
+        { '!': { var: 'folder' } } :
+        { '==': [{ var: 'folder' }, projectFolderScope] };
+    return JSON.stringify(filter ? { and: [JSON.parse(filter), condition] } : condition);
+}
+
 export function getProjectsAsync(
     query: Partial<ProjectsQuery>, tasksQuery: Partial<TasksQuery> = {},
 ): ThunkAction {
@@ -114,7 +130,8 @@ export function getProjectsAsync(
 
         let result = null;
         try {
-            result = await cvat.projects.get(filteredQuery);
+            const scopedFilter = withFolderScope(filteredQuery.filter);
+            result = await cvat.projects.get(scopedFilter ? { ...filteredQuery, filter: scopedFilter } : filteredQuery);
         } catch (error) {
             if (isRequestRelevant()) {
                 dispatch(projectActions.getProjectsFailed(error));

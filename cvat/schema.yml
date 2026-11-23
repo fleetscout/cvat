@@ -4435,6 +4435,268 @@ paths:
       responses:
         '204':
           description: The organization has been deleted
+  /api/project_folders:
+    get:
+      operationId: project_folders_list
+      summary: List the folders on the projects page
+      parameters:
+      - name: X-Organization
+        in: header
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
+        schema:
+          type: string
+        allowEmptyValue: true
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'name'].
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: A simple equality filter for the name field
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
+        schema:
+          type: string
+        allowEmptyValue: true
+      - name: org_id
+        in: query
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
+        schema:
+          type: integer
+        allowEmptyValue: true
+      - name: search
+        required: false
+        in: query
+        description: 'A search term. Available search_fields: [''name'']'
+        schema:
+          type: string
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'', ''name'']'
+        schema:
+          type: string
+      tags:
+      - project_folders
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectFolder'
+          description: ''
+    post:
+      operationId: project_folders_create
+      summary: Create a folder
+      tags:
+      - project_folders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectFolderRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ProjectFolder'
+          description: ''
+  /api/project_folders/{id}:
+    get:
+      operationId: project_folders_retrieve
+      summary: Get a folder
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this project folder.
+        required: true
+      tags:
+      - project_folders
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ProjectFolder'
+          description: ''
+    patch:
+      operationId: project_folders_partial_update
+      summary: Rename a folder
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this project folder.
+        required: true
+      tags:
+      - project_folders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectFolderRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ProjectFolder'
+          description: ''
+    delete:
+      operationId: project_folders_destroy
+      summary: Delete a folder. Its projects go back to the main projects page
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this project folder.
+        required: true
+      tags:
+      - project_folders
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/project_folders/{id}/add_projects:
+    post:
+      operationId: project_folders_create_add_projects
+      description: Projects already in another folder move to this one.
+      summary: Put projects in this folder
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this project folder.
+        required: true
+      tags:
+      - project_folders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectFolderProjectsRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ProjectFolder'
+          description: ''
+  /api/project_folders/{id}/remove_projects:
+    post:
+      operationId: project_folders_create_remove_projects
+      description: They go back to the main projects page.
+      summary: Take projects out of this folder
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this project folder.
+        required: true
+      tags:
+      - project_folders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectFolderProjectsRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ProjectFolder'
+          description: ''
+        '400':
+          description: Bad project IDs
   /api/projects:
     get:
       operationId: projects_list
@@ -4468,7 +4730,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['assignee', 'id', 'name', 'owner', 'status', 'updated_date'].
+           Available filter_fields: ['assignee', 'folder', 'id', 'name', 'owner', 'status', 'updated_date'].
         schema:
           type: string
       - name: name
@@ -11618,6 +11880,13 @@ components:
         description:
           type: string
         contact: {}
+    PatchedProjectFolderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -12105,6 +12374,52 @@ components:
           format: binary
       required:
       - project_file
+    ProjectFolder:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        organization:
+          type: integer
+          readOnly: true
+          nullable: true
+        owner:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        project_count:
+          type: integer
+          readOnly: true
+      required:
+      - name
+    ProjectFolderProjectsRequest:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            type: integer
+          maxItems: 500
+          minItems: 1
+      required:
+      - projects
+    ProjectFolderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+      required:
+      - name
     ProjectRead:
       type: object
       properties:

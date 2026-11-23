@@ -3142,7 +3142,7 @@ class JobViewSet(
         if "reviewer" in request_serializer.validated_data:
             kwargs["reviewer_id"] = request_serializer.validated_data["reviewer"]
 
-        db_job = job_people.send_to_review(pk, sent_by_id=request.user.id, **kwargs)
+        db_job = job_people.send_to_review(pk, **kwargs)
         return Response(JobReadSerializer(db_job, context={"request": request}).data)
 
 

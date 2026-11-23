@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, {
+    useCallback, useEffect, useMemo, useState,
+} from 'react';
 import { useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
@@ -11,9 +13,14 @@ import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 
 import { CombinedState } from 'reducers';
-import { getCore } from 'cvat-core-wrapper';
+import notification from 'antd/lib/notification';
+import { Job, getCore } from 'cvat-core-wrapper';
+import { getMyOrganizationRole } from 'components/job-workflow/api';
 import DistributeJobsModal from 'components/jobs-page/distribute-jobs-modal';
 import BoardColumnComponent from './board-column';
+import {
+    BoardColumnKey, MoveJobModal, NEEDS_PERSON, moveJob,
+} from './move-job';
 import { BOARD_COLUMNS, BoardFilters } from './board-config';
 
 const core = getCore();
@@ -48,7 +55,28 @@ function saveProject(project: ProjectOption | null): void {
 }
 
 function BoardPageComponent(): JSX.Element {
-    const username = useSelector((state: CombinedState) => state.auth.user?.username ?? null);
+    const user = useSelector((state: CombinedState) => state.auth.user);
+    const username = user?.username ?? null;
+    const organization = useSelector((state: CombinedState) => state.organizations.current);
+    const [canMove, setCanMove] = useState(false);
+    const [dragging, setDragging] = useState<Job | null>(null);
+    const [moving, setMoving] = useState<{ job: Job; target: BoardColumnKey } | null>(null);
+
+    // Only maintainers and owners of the organisation (and admins) may move jobs by dragging
+    useEffect(() => {
+        if (!user) return;
+        if (user.isSuperuser) {
+            setCanMove(true);
+            return;
+        }
+        if (!organization) {
+            setCanMove(false);
+            return;
+        }
+        getMyOrganizationRole(user.username)
+            .then((role) => setCanMove(role === 'maintainer' || role === 'owner'))
+            .catch(() => setCanMove(false));
+    }, [user, organization]);
     const [assignee, setAssignee] = useState<string | null>(null);
     const [search, setSearch] = useState<string | null>(null);
     const [pendingSearch, setPendingSearch] = useState('');
@@ -67,6 +95,24 @@ function BoardPageComponent(): JSX.Element {
 
     const reload = useCallback((): void => setVersion((previous) => previous + 1), []);
 
+    const onDropJob = useCallback((target: BoardColumnKey): void => {
+        const job = dragging;
+        setDragging(null);
+        if (!job) return;
+        if (NEEDS_PERSON[target]) {
+            setMoving({ job, target });
+            return;
+        }
+        moveJob(job, target, null)
+            .then((message) => notification.success({ message, className: 'cvat-notification-board-moved' }))
+            .catch((error: unknown) => notification.error({
+                message: `Could not move job ${job.id}`,
+                description: error instanceof Error ? error.message : String(error),
+                className: 'cvat-notification-board-move-failed',
+            }))
+            .finally(reload);
+    }, [dragging, reload]);
+
     const chooseProject = (value?: number): void => {
         const chosen = [...projectOptions, ...(project ? [project] : [])]
             .find((option) => option.value === value) ?? null;
@@ -84,7 +130,7 @@ function BoardPageComponent(): JSX.Element {
                 is_active: true,
                 ...(value ? { search: value } : {}),
             });
-            setUserOptions(users.map((user: { username: string }) => user.username));
+            setUserOptions(users.map((found: { username: string }) => found.username));
         } catch (_error: unknown) {
             setUserOptions([]);
         }
@@ -161,10 +207,26 @@ function BoardPageComponent(): JSX.Element {
                         column={column}
                         filters={filters}
                         onChanged={reload}
+                        canMove={canMove}
+                        dragging={dragging}
+                        onDragStart={setDragging}
+                        onDragEnd={() => setDragging(null)}
+                        onDropJob={onDropJob}
                     />
                 ))}
             </div>
             <DistributeJobsModal onDone={reload} />
+            {moving && (
+                <MoveJobModal
+                    job={moving.job}
+                    target={moving.target}
+                    onClose={() => setMoving(null)}
+                    onDone={() => {
+                        setMoving(null);
+                        reload();
+                    }}
+                />
+            )}
         </div>
     );
 }

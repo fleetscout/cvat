@@ -129,9 +129,7 @@ def set_people(
 
 
 @transaction.atomic
-def send_to_review(
-    job_id: int, *, sent_by_id: int, reviewer_id: int | None | object = UNSET
-) -> engine_models.Job:
+def send_to_review(job_id: int, *, reviewer_id: int | None | object = UNSET) -> engine_models.Job:
     """
     Moves a job from annotation to review and hands it to the reviewer.
     The person who held the job is remembered as its annotator.
@@ -145,7 +143,9 @@ def send_to_review(
         _check_users(db_job, [reviewer_id])
 
     db_people, _ = JobPeople.objects.get_or_create(job=db_job)
-    db_people.annotator_id = db_job.assignee_id or sent_by_id
+    # Whoever holds the job annotated it. A lead sending an unassigned job leaves the annotator as it was.
+    if db_job.assignee_id:
+        db_people.annotator_id = db_job.assignee_id
     if reviewer_id is not UNSET:
         db_people.reviewer_id = reviewer_id
     db_people.save()

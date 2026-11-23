@@ -21,9 +21,14 @@ interface Props {
     job: Job;
     people: JobPeople | null;
     onChanged: () => void;
+    // Set when the user may drag cards between columns
+    onDragStart?: (job: Job) => void;
+    onDragEnd?: () => void;
 }
 
-function BoardCardComponent({ job, people, onChanged }: Readonly<Props>): JSX.Element {
+function BoardCardComponent({
+    job, people, onChanged, onDragStart, onDragEnd,
+}: Readonly<Props>): JSX.Element {
     const history = useHistory();
 
     const onClick = useCallback((event: React.MouseEvent): void => {
@@ -39,8 +44,16 @@ function BoardCardComponent({ job, people, onChanged }: Readonly<Props>): JSX.El
         <Card
             hoverable
             size='small'
-            className='cvat-board-card'
+            className={`cvat-board-card${onDragStart ? ' cvat-board-card-draggable' : ''}`}
             onClick={onClick}
+            draggable={!!onDragStart}
+            onDragStart={onDragStart ? (event: React.DragEvent) => {
+                const { dataTransfer } = event;
+                dataTransfer.setData('text/plain', String(job.id));
+                dataTransfer.effectAllowed = 'move';
+                onDragStart(job);
+            } : undefined}
+            onDragEnd={onDragEnd}
         >
             <Text strong ellipsis={{ tooltip: job.taskName }} className='cvat-board-card-title'>
                 {job.taskName ?? `Task ${job.taskId}`}

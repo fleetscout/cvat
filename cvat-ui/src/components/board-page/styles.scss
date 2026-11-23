@@ -87,6 +87,20 @@
         }
     }
 
+    .cvat-board-column-drop {
+        outline: 2px dashed #9db4dd;
+        outline-offset: -2px;
+    }
+
+    .cvat-board-column-drop-over {
+        outline-color: #234e9c;
+        background: #e6edf8;
+    }
+
+    .cvat-board-card-draggable {
+        cursor: grab;
+    }
+
     .cvat-board-card {
         .cvat-board-card-title {
             display: block;

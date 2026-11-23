@@ -97,3 +97,12 @@ export function initials(user: UserOption): string {
     const source = parts.length ? parts : user.username.split(/[._\-\s@]+/).filter(Boolean);
     return source.slice(0, 2).map((part) => part[0].toUpperCase()).join('') || '?';
 }
+
+// The signed-in user's role in the current organisation, or null outside one
+export async function getMyOrganizationRole(username: string): Promise<string | null> {
+    const response = await core.server.request(url('/memberships'), {
+        method: 'GET',
+        params: { user: username, page_size: 1 },
+    }) as { data: { results: { role: string }[] } };
+    return response.data.results[0]?.role ?? null;
+}

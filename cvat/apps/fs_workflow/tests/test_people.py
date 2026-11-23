@@ -212,3 +212,12 @@ class JobPeopleAPITestCase(ApiTestBase):
 
         response = self._list(self.owner, [self.job.id])
         self.assertEqual(response.data[0]["reviewer"]["id"], self.reviewer.id)
+
+    def test_a_lead_sending_an_unassigned_job_is_not_recorded_as_its_annotator(self):
+        self.job.assignee = None
+        self.job.save()
+
+        response = self._send(self.owner, {"reviewer": self.reviewer.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertIsNone(JobPeople.objects.get(job=self.job).annotator_id)

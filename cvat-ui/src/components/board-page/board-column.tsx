@@ -13,6 +13,7 @@ import notification from 'antd/lib/notification';
 import { Job, getCore } from 'cvat-core-wrapper';
 import { JobPeople, getJobPeople } from 'components/job-workflow/api';
 import AllocateButton from './allocate-button';
+import { BoardColumnKey, columnOf } from './move-job';
 import BoardCardComponent from './board-card';
 import {
     BOARD_PAGE_SIZE, BoardColumnConfig, BoardFilters, buildColumnFilter,
@@ -24,9 +25,19 @@ interface Props {
     column: BoardColumnConfig;
     filters: BoardFilters;
     onChanged: () => void;
+    // Drag and drop between columns, for maintainers and above
+    canMove: boolean;
+    dragging: Job | null;
+    onDragStart: (job: Job) => void;
+    onDragEnd: () => void;
+    onDropJob: (column: BoardColumnKey) => void;
 }
 
-function BoardColumnComponent({ column, filters, onChanged }: Readonly<Props>): JSX.Element {
+function BoardColumnComponent({
+    column, filters, onChanged, canMove, dragging, onDragStart, onDragEnd, onDropJob,
+}: Readonly<Props>): JSX.Element {
+    const [over, setOver] = useState(false);
+    const accepts = canMove && dragging !== null && columnOf(dragging) !== column.key;
     const [jobs, setJobs] = useState<Job[]>([]);
     const [people, setPeople] = useState<Record<number, JobPeople>>({});
     const [count, setCount] = useState(0);
@@ -79,7 +90,25 @@ function BoardColumnComponent({ column, filters, onChanged }: Readonly<Props>): 
     }, [fetchPage]);
 
     return (
-        <div className={`cvat-board-column cvat-board-column-${column.key}`}>
+        <div
+            className={`cvat-board-column cvat-board-column-${column.key}${accepts ? ' cvat-board-column-drop' : ''}` +
+                `${accepts && over ? ' cvat-board-column-drop-over' : ''}`}
+            onDragOver={(event: React.DragEvent) => {
+                if (!accepts) return;
+                event.preventDefault();
+                const { dataTransfer } = event;
+                dataTransfer.dropEffect = 'move';
+                if (!over) setOver(true);
+            }}
+            onDragLeave={(event: React.DragEvent) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(false);
+            }}
+            onDrop={(event: React.DragEvent) => {
+                event.preventDefault();
+                setOver(false);
+                if (accepts) onDropJob(column.key as BoardColumnKey);
+            }}
+        >
             <div className='cvat-board-column-header'>
                 <Text strong>{column.title}</Text>
                 <span className='cvat-board-column-header-right'>
@@ -97,6 +126,8 @@ function BoardColumnComponent({ column, filters, onChanged }: Readonly<Props>): 
                         job={job}
                         people={people[job.id] ?? null}
                         onChanged={onChanged}
+                        onDragStart={canMove ? onDragStart : undefined}
+                        onDragEnd={onDragEnd}
                     />
                 ))}
                 {fetching && <Spin className='cvat-board-column-spinner' />}
